@@ -7,10 +7,9 @@ DEPENDENCY_FOLDER = os.path.join(BASE_FOLDER, 'deps')
 
 TILE_DOWNLOADER = os.path.join(DEPENDENCY_FOLDER, 'jTileDownloader-0-6-1.jar')
 
-CITIES = set([
+CITIES = [
   "Bangkok, Thailand",
   "Barcelona, Spain",
-  "Beijing, China",
   "Berlin, Germany",
   "Bogota, Colombia",
   "Boston, Massachusetts",
@@ -24,7 +23,6 @@ CITIES = set([
   "Hong Kong",
   "Houston, Texas",
   "Istanbul, Turkey",
-  "Jakarta, Indonesia",
   "Kolkata, India",
   "Kuala Lumpur, Malaysia",
   "Kyoto, Japan",
@@ -32,18 +30,17 @@ CITIES = set([
   "Las Vegas, Nevada",
   "Lima, Peru",
   "London, England",
-  "Los Angeles, CA",
+  "Los Angeles, California",
   "Madrid, Spain",
   "Manila, Philippines",
-  "Melbourne, Australia"
+  "Melbourne, Australia",
   "Mexico City, Mexico",
   "Milan, Italy",
   "Montreal, Canada",
   "Moscow, Russia",
   "Mumbai, India",
-  "Nanjing, China",
   "New Orleans, Louisiana",
-  "New York, NY",
+  "New York, New York",
   "Osaka, Japan",
   "Paris, France",
   "Philadelphia, Pennsylvania",
@@ -51,7 +48,7 @@ CITIES = set([
   "Rio de Janeiro, Brazil",
   "San Antonio, Texas",
   "San Diego, California",
-  "San Francisco, CA",
+  "San Francisco, California",
   "Santiago, Chile",
   "Sao Paulo, Brazil",
   "Seattle, Washington",
@@ -62,4 +59,5 @@ CITIES = set([
   "Tokyo, Japan",
   "Toronto, Canada",
   "Washington D.C.",
-])
+  "Wuhan, China",
+]

@@ -95,3 +95,5 @@ input_tiles/
 generated_tiles/
 
 .DS_Store
+
+appConfig.xml

@@ -5,7 +5,7 @@
 <entry key="SlippyMapNoDownload">false</entry>
 <entry key="OverwriteExistingFiles">false</entry>
 <entry key="UseProxyServer">false</entry>
-<entry key="DownloadThreads">4</entry>
+<entry key="DownloadThreads">8</entry>
 <entry key="MinimumAgeInDays">7</entry>
 <entry key="TileSortingPolicy">0</entry>
 <entry key="InputPanelIndex">1</entry>
