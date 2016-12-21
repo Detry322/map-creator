@@ -1,0 +1,2 @@
+-r common.txt
+tensorflow-gpu==0.12.0rc1

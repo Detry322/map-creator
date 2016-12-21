@@ -93,3 +93,5 @@ input_tiles/
 
 # Created tiles
 generated_tiles/
+
+.DS_Store
