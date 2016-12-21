@@ -87,3 +87,9 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# Downloaded tiles
+input_tiles/
+
+# Created tiles
+generated_tiles/
