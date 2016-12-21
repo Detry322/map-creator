@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+<entry key="WaitAfterNrTiles">false</entry>
+<entry key="SlippyMapNoDownload">false</entry>
+<entry key="OverwriteExistingFiles">true</entry>
+<entry key="UseProxyServer">false</entry>
+<entry key="DownloadThreads">4</entry>
+<entry key="MinimumAgeInDays">7</entry>
+<entry key="TileSortingPolicy">0</entry>
+<entry key="InputPanelIndex">1</entry>
+<entry key="SlippyMapSaveTiles">false</entry>
+</properties>

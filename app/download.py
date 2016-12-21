@@ -2,7 +2,7 @@ import os, requests, subprocess, tempfile
 
 from app import CITIES, INPUT_TILES_FOLDER, TILE_DOWNLOADER
 
-ZOOM_LEVEL = "16"
+ZOOM_LEVEL = "15"
 TILE_SERVER = "OpenCycleMap"
 
 MAP_API_BASE = 'http://maps.googleapis.com/maps/api/geocode/json'
@@ -11,7 +11,6 @@ XML_BASE = """<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
 <properties>
   <entry key="Type">BBoxLatLon</entry>
-  <entry key="WaitAfterNrTiles">false</entry>
   <entry key="OutputLocation">{}</entry>
   <entry key="TileServer">{}</entry>
   <entry key="MaxLat">{}</entry>
@@ -48,3 +47,7 @@ def download_city(city):
     ['java', '-jar', TILE_DOWNLOADER, 'dl=' + xml_file]
   )
   os.unlink(xml_file)
+
+def download_tiles():
+  for city in CITIES:
+    download_city(city)

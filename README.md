@@ -9,15 +9,15 @@ To come!
 Usage
 -----
 
+To generate a single output tile, run:
+
+`python -m app`
+
 To download the necessary tiles for training, run:
 
-`python -m app download`
+`python -m app --action download`
 
 To train the model (runs potentially overnight), run:
 
-`python -m app train`
-
-To generate a single output tile, run:
-
-`python -m app generate`
+`python -m app --action train`
 
