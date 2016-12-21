@@ -1,5 +1,7 @@
 import os
 
+ZOOM_LEVEL = 15
+
 BASE_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 INPUT_TILES_FOLDER = os.path.join(BASE_FOLDER, 'input_tiles')
 GENERATED_TILES_FOLDER = os.path.join(BASE_FOLDER, 'generated_tiles')

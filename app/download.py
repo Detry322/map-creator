@@ -1,9 +1,8 @@
 import os, requests, subprocess, tempfile, math
 
-from app import CITIES, INPUT_TILES_FOLDER, TILE_DOWNLOADER
+from app import CITIES, INPUT_TILES_FOLDER, TILE_DOWNLOADER, ZOOM_LEVEL
 
 MAX_TILES_PER_CITY = 5000
-ZOOM_LEVEL = 15
 TILE_SERVER = "OpenCycleMap"
 
 MAP_API_BASE = 'http://maps.googleapis.com/maps/api/geocode/json'
