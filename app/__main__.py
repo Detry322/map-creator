@@ -1,6 +1,6 @@
 import argparse
 
-from app.download import download_tiles
+from app.download import download_tiles, prune_tiles
 
 def get_args():
   parser = argparse.ArgumentParser(description="map-creator uses DCGANs to generate pictures of map tiles")
@@ -11,7 +11,10 @@ def get_args():
 def main():
   args = get_args()
   if args.action == 'download':
+    print "Downloading tiles..."
     download_tiles()
+    print "Pruning tiles..."
+    prune_tiles()
   else:
     raise Exception("Sorry, haven't implemented that yet!")
 

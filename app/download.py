@@ -1,4 +1,6 @@
-import os, requests, subprocess, tempfile, math
+import os, requests, subprocess, tempfile, math, glob
+
+from PIL import Image
 
 from app import CITIES, INPUT_TILES_FOLDER, TILE_DOWNLOADER, ZOOM_LEVEL
 
@@ -65,6 +67,15 @@ def download_city(city, city_bounds):
   )
   os.unlink(xml_file)
 
+def prune_tiles():
+  glob_path = os.path.join(INPUT_TILES_FOLDER, '*', '*', '*.png')
+  for filename in glob.glob(glob_path):
+    try:
+      Image.open(filename).verify()
+    except IOError:
+      print "Pruning {}...".format(filename)
+      os.unlink(filename)
+
 def download_tiles():
   for city in CITIES:
     try:
@@ -75,3 +86,4 @@ def download_tiles():
       raise
     except:
       print "Error downloading city: " + city
+
