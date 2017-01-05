@@ -1,0 +1,1 @@
+from app.models.basic_dcgan import BasicDCGAN
