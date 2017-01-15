@@ -12,7 +12,7 @@ import logging
 class BasicDCGAN:
   EPOCHS = 100
   NOISE_SIZE = 100
-  MAX_BATCH_SIZE = 100
+  MAX_BATCH_SIZE = 2
   GENERATOR_OPTIMIZER = 'adam'
   DISCRIMINATOR_OPTIMIZER = SGD(lr=0.0005, momentum=0.9, nesterov=True)
   FULL_OPTIMIZER = SGD(lr=0.0005, momentum=0.9, nesterov=True)
@@ -30,8 +30,8 @@ class BasicDCGAN:
 
   def _construct_generator(self):
     model = Sequential()
-    model.add(Dense(input_dim=self.NOISE_SIZE, output_dim=(64*64*4), activation='relu'))
-    model.add(Reshape((64, 64, 4)))
+    model.add(Dense(input_dim=self.NOISE_SIZE, output_dim=(64*64), activation='relu'))
+    model.add(Reshape((64, 64, 1)))
     model.add(UpSampling2D(size=(2, 2)))
     model.add(Convolution2D(64, 5, 5, border_mode='same', activation='relu'))
     model.add(UpSampling2D(size=(2, 2)))
@@ -43,7 +43,7 @@ class BasicDCGAN:
     model = Sequential()
     model.add(Convolution2D(64, 5, 5, border_mode='same', subsample=(2,2), input_shape=(256,256,3)))
     model.add(LeakyReLU(0.2))
-    model.add(Convolution2D(128, 5, 5, border_mode='same', subsample=(2,2)))
+    model.add(Convolution2D(64, 5, 5, border_mode='same', subsample=(2,2)))
     model.add(LeakyReLU(0.2))
     model.add(Flatten())
     model.add(Dense(256))
