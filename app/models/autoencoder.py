@@ -1,4 +1,5 @@
 from keras.models import Sequential
+from keras.callbacks import ModelCheckpoint
 from keras.layers import Dense, Reshape, Flatten
 from keras.layers.advanced_activations import LeakyReLU
 from keras.layers.normalization import BatchNormalization
@@ -23,15 +24,15 @@ class Autoencoder:
 
   def _construct_model(self):
     model = Sequential()
-    model.add(Convolution2D(64, 5, 5, border_mode='same', subsample=(2,2), input_shape=(256,256,3)))
+    model.add(Convolution2D(32, 5, 5, border_mode='same', subsample=(2,2), input_shape=(256,256,3)))
     model.add(LeakyReLU(0.2))
     model.add(MaxPooling2D(pool_size=(2, 2), dim_ordering="tf"))
 
-    model.add(Convolution2D(64, 5, 5))
+    model.add(Convolution2D(32, 5, 5))
     model.add(LeakyReLU(0.2))
     model.add(MaxPooling2D(pool_size=(2, 2), dim_ordering="tf"))
 
-    model.add(Convolution2D(64, 5, 5))
+    model.add(Convolution2D(32, 5, 5))
     model.add(LeakyReLU(0.2))
     model.add(MaxPooling2D(pool_size=(2, 2), dim_ordering="tf"))
 
@@ -40,15 +41,15 @@ class Autoencoder:
     model.add(LeakyReLU(0.2))
     model.add(Reshape((32, 32, 1)))
 
-    model.add(Convolution2D(64, 5, 5, border_mode='same'))
+    model.add(Convolution2D(32, 5, 5, border_mode='same'))
     model.add(LeakyReLU(0.2))
     model.add(UpSampling2D(size=(2, 2)))
 
-    model.add(Convolution2D(64, 5, 5, border_mode='same'))
+    model.add(Convolution2D(32, 5, 5, border_mode='same'))
     model.add(LeakyReLU(0.2))
     model.add(UpSampling2D(size=(2, 2)))
 
-    model.add(Convolution2D(64, 5, 5, border_mode='same'))
+    model.add(Convolution2D(32, 5, 5, border_mode='same'))
     model.add(LeakyReLU(0.2))
     model.add(UpSampling2D(size=(2, 2)))
 
@@ -61,14 +62,17 @@ class Autoencoder:
 
   def _train_generator(self):
     while True:
-      image = np.array([next(self.loader)/255.0])
+      image = np.array([next(self.loader)/255.0 for i in range(7)])
       yield (image, image)
 
   def train(self):
     validation_images = np.array([self.loader.random()/255.0 for _ in range(self.VALIDATION_SIZE)])
 
+    checkpoint = ModelCheckpoint('model.h5', monitor='val_acc', verbose=1, save_best_only=True, mode='max')
+
     self.full_model.fit_generator(
       self._train_generator(),
       samples_per_epoch=len(self.loader),
       nb_epoch=self.EPOCHS,
-      validation_data=(validation_images, validation_images))
+      validation_data=(validation_images, validation_images),
+      callbacks=[checkpoint])
