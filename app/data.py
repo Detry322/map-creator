@@ -1,5 +1,6 @@
 import os, glob
 import numpy as np
+import random
 from scipy import misc
 
 from app import INPUT_TILES_FOLDER
@@ -14,6 +15,9 @@ class ZoomLoader(object):
 
   def __len__(self):
     return len(self.files)
+
+  def random(self):
+    return misc.imread(random.choice(self.files))
 
   def next(self):
     self.i += 1

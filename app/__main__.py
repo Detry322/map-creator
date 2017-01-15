@@ -7,7 +7,7 @@ numpy.random.seed(234421)
 
 from app.download import download_tiles, prune_tiles
 from app.data import ZoomLoader
-from app.models import BasicDCGAN
+from app.models import BasicDCGAN, Autoencoder
 
 def get_args():
   parser = argparse.ArgumentParser(description="map-creator uses DCGANs to generate pictures of map tiles")
@@ -24,7 +24,7 @@ def main():
     prune_tiles()
   elif args.action == 'train':
     loader = ZoomLoader(15)
-    model = BasicDCGAN(loader)
+    model = Autoencoder(loader)
     model.train()
   else:
     raise Exception("Sorry, haven't implemented that yet!")
