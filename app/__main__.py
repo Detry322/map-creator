@@ -24,7 +24,7 @@ def main():
     prune_tiles()
   elif args.action == 'train':
     loader = ZoomLoader(15)
-    model = Autoencoder(loader)
+    model = BasicDCGAN(loader)
     model.train()
   else:
     raise Exception("Sorry, haven't implemented that yet!")
