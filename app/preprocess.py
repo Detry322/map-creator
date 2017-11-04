@@ -1,10 +1,16 @@
-def preprocess_tiles(*args):
-    for arg in args:
-        print arg
-    pass
+
+functions = {
+  'greyscale': 0,
+  'resize': 1,
+}
+
+def preprocess_tiles(zoom, *args):
+  for arg in args:
+    if arg in functions:
+      pass
 
 def greyscale():
-    pass
+  pass
 
-def resize(p):
-    pass
+def resize(*args):
+  pass
