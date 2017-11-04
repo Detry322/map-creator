@@ -2,7 +2,7 @@ import os, requests, subprocess, tempfile, math, glob
 
 from PIL import Image
 
-from app import CITIES, INPUT_TILES_FOLDER, TILE_DOWNLOADER, ZOOM_LEVEL
+from app import CITIES, INPUT_TILES_FOLDER, TILE_DOWNLOADER
 
 MAX_TILES_PER_CITY = 5000
 TILE_SERVER = "OpenCycleMap"
@@ -23,9 +23,9 @@ XML_BASE = """<?xml version="1.0" encoding="UTF-8"?>
 </properties>
 """
 
-def deg2num(lat_deg, lon_deg):
+def deg2num(lat_deg, lon_deg, zoom):
   lat_rad = math.radians(float(lat_deg))
-  n = 2.0 ** ZOOM_LEVEL
+  n = 2.0 ** zoom
   xtile = int((float(lon_deg) + 180.0) / 360.0 * n)
   ytile = int((1.0 - math.log(math.tan(lat_rad) + (1 / math.cos(lat_rad))) / math.pi) / 2.0 * n)
   return (xtile, ytile)
@@ -36,12 +36,12 @@ def get_city_bounds(city):
   assert len(result.json()['results']) > 0, "Maps API could not find city"
   return result.json()['results'][0]['geometry']['bounds']
 
-def check_city_bounds(city_bounds):
-  xne, yne = deg2num(city_bounds['northeast']['lat'], city_bounds['northeast']['lng'])
-  xsw, ysw = deg2num(city_bounds['southwest']['lat'], city_bounds['southwest']['lng'])
+def check_city_bounds(city_bounds, zoom):
+  xne, yne = deg2num(city_bounds['northeast']['lat'], city_bounds['northeast']['lng'], zoom)
+  xsw, ysw = deg2num(city_bounds['southwest']['lat'], city_bounds['southwest']['lng'], zoom)
   return xne > xsw and yne < ysw and (xne - xsw)*(ysw - yne) < MAX_TILES_PER_CITY
 
-def get_xml(city_bounds):
+def get_xml(city_bounds, zoom):
   return XML_BASE.format(
     INPUT_TILES_FOLDER,
     TILE_SERVER,
@@ -49,19 +49,19 @@ def get_xml(city_bounds):
     city_bounds['northeast']['lng'],
     city_bounds['southwest']['lat'],
     city_bounds['southwest']['lng'],
-    ZOOM_LEVEL
+    zoom
   )
 
-def create_city_xml_file(city_bounds):
+def create_city_xml_file(city_bounds, zoom):
   fd, filename = tempfile.mkstemp()
   with os.fdopen(fd, 'w') as f:
-    f.write(get_xml(city_bounds))
+    f.write(get_xml(city_bounds, zoom))
   return filename
 
-def download_city(city, city_bounds):
-  if not check_city_bounds(city_bounds):
+def download_city(city, city_bounds, zoom):
+  if not check_city_bounds(city_bounds, zoom):
     raise Exception("City's limits are invalid")
-  xml_file = create_city_xml_file(city_bounds)
+  xml_file = create_city_xml_file(city_bounds, zoom)
   subprocess.check_call(
     ['java', '-jar', TILE_DOWNLOADER, 'dl=' + xml_file]
   )
@@ -76,12 +76,12 @@ def prune_tiles():
       print "Pruning {}...".format(filename)
       os.unlink(filename)
 
-def download_tiles():
+def download_tiles(zoom):
   for city in CITIES:
     try:
       print city
       city_bounds = get_city_bounds(city)
-      download_city(city, city_bounds)
+      download_city(city, city_bounds, zoom)
     except KeyboardInterrupt:
       raise
     except:

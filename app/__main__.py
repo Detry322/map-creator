@@ -13,17 +13,18 @@ def get_args():
   parser = argparse.ArgumentParser(description="map-creator uses DCGANs to generate pictures of map tiles")
   parser.add_argument('--action', help="Defines the action to be taken",
                       default='train', choices=['download', 'train', 'generate'])
+  parser.add_argument('zoom', nargs='?', default=15, type=int)
   return parser.parse_args()
 
 def main():
   args = get_args()
   if args.action == 'download':
     print "Downloading tiles..."
-    download_tiles()
+    download_tiles(args.zoom)
     print "Pruning tiles..."
     prune_tiles()
   elif args.action == 'train':
-    loader = ZoomLoader(15)
+    loader = ZoomLoader(args.zoom)
     model = BasicDCGAN(loader)
     model.train()
   else:
