@@ -97,3 +97,4 @@ generated_tiles/
 .DS_Store
 
 appConfig.xml
+*.ipynb
