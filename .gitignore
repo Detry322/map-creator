@@ -91,6 +91,9 @@ ENV/
 # Downloaded tiles
 input_tiles/
 
+# Preprocessed tiles
+output_tiles/
+
 # Created tiles
 generated_tiles/
 
