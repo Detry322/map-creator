@@ -1,2 +1,3 @@
 -r common.txt
-tensorflow-gpu==0.12.0rc1
+tensorflow==1.4.0
+tensorflow-gpu==1.4.0

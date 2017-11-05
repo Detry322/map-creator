@@ -1,5 +1,5 @@
-requests==2.11.1
-h5py==2.6.0
-Keras==1.1.2
-numpy==1.11.3
-Pillow==3.4.2
+h5py==2.7.1
+Keras==2.0.9
+numpy==1.13.3
+Pillow==4.3.0
+requests==2.18.4

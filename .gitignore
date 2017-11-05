@@ -101,3 +101,5 @@ generated_tiles/
 
 appConfig.xml
 *.ipynb
+
+._*

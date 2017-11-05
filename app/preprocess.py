@@ -3,6 +3,7 @@ import numpy as np
 from scipy import misc
 
 from app import INPUT_TILES_FOLDER, OUTPUT_TILES_FOLDER
+from app.utils import mkdir_p
 
 def greyscale(img, *args):
   return img.mean(axis=2)
@@ -34,16 +35,22 @@ def parse_args(args):
   functions.append(make_func(func, f_args))
   return functions
 
+def write_processed_image(processed_image, input_filename):
+  output_filename = input_filename.replace(INPUT_TILES_FOLDER, OUTPUT_TILES_FOLDER)
+  folder, _ = os.path.split(output_filename)
+  mkdir_p(folder)
+  with open(output_filename, 'w+') as f:
+    misc.imsave(f, processed_image)
+
+def preprocess_tile(functions, input_filename):
+  img = misc.imread(input_filename)
+  for func in functions:
+    img = func(img)
+  write_processed_image(img, input_filename)
+
 def preprocess_tiles(zoom, *args):
   functions = parse_args(args)
-
   input_files = glob.glob(os.path.join(INPUT_TILES_FOLDER, str(zoom), '*', '*.png'))
 
-  for i in xrange(len(input_files)):
-    f = input_files[i]
-    output = os.path.join(OUTPUT_TILES_FOLDER, f[len(INPUT_TILES_FOLDER):])
-    open(output, 'w+').close()
-    img = misc.imread(f)
-    for func in functions:
-      img = func(img)
-    misc.imsave(output, img)
+  for input_filename in input_files:
+    preprocess_tile(functions, input_filename)
