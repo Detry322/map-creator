@@ -3,11 +3,11 @@ import numpy as np
 import random
 from scipy import misc
 
-from app import INPUT_TILES_FOLDER
+from app import OUTPUT_TILES_FOLDER
 
 class ZoomLoader(object):
   def __init__(self, zoom):
-    self.files = glob.glob(os.path.join(INPUT_TILES_FOLDER, str(zoom), '*', '*.png'))
+    self.files = glob.glob(os.path.join(OUTPUT_TILES_FOLDER, str(zoom), '*', '*.png'))
     self.i = -1
 
   def __iter__(self):

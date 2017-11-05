@@ -8,7 +8,8 @@ np.random.seed(234421)
 from app.data import ZoomLoader
 from app.download import download_tiles, prune_tiles
 from app.preprocess import preprocess_tiles
-from app.models import BasicDCGAN, Autoencoder
+from app.train import train_model
+from app.generate import generate_tiles
 
 def get_args():
   parser = argparse.ArgumentParser(description='map-creator uses DCGANs to generate pictures of map tiles')
@@ -16,6 +17,8 @@ def get_args():
   parser.add_argument('--download', help='Download tiles', action='store_true')
   parser.add_argument('--preprocess', help='Preprocessing args', nargs='+')
   parser.add_argument('--train', help='Train tiles', action='store_true')
+  parser.add_argument('--model_type', help='The model to train/generate with', type=str, default='BasicDCGAN')
+  parser.add_argument('--model_file', help='The h5 model file', type=str)
   parser.add_argument('--generate', help='Generating tiles')
   return parser.parse_args()
 
@@ -29,12 +32,12 @@ def main():
   if args.preprocess:
     print 'Preprocessing tiles...'
     preprocess_tiles(args.zoom, *args.preprocess)
-  elif args.train:
-    loader = ZoomLoader(args.zoom)
-    model = BasicDCGAN(loader)
-    model.train()
-  else:
-    raise Exception('Sorry, haven\'t implemented that yet!')
+  if args.train:
+    print "Training model..."
+    train_model(args.model_type, args.zoom, model_file=args.model_file)
+  if args.generate:
+    print "Generating tiles..."
+    generate_tiles(args.model_type, args.model_file)
 
 if __name__ == '__main__':
   main()
