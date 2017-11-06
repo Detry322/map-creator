@@ -15,7 +15,7 @@ from app.models.base import BaseModel
 class BasicDCGAN(BaseModel):
   EPOCHS = 1000
   NOISE_SIZE = 100
-  MAX_BATCH_SIZE = 256
+  MAX_BATCH_SIZE = 512
   GENERATOR_OPTIMIZER = 'adam'
   DISCRIMINATOR_OPTIMIZER = SGD(lr=0.0005, momentum=0.9, nesterov=True)
   FULL_OPTIMIZER = SGD(lr=0.0005, momentum=0.9, nesterov=True)
@@ -81,8 +81,7 @@ class BasicDCGAN(BaseModel):
 
         # first, train discriminator
         self.discriminator_model.trainable = True
-        self._compile()
-
+        self.discriminator_model.compile(loss='binary_crossentropy', optimizer=self.DISCRIMINATOR_OPTIMIZER, metrics=['accuracy'])
         images = np.array([next(self.image_loader)/255.0 for _ in range(batch_size)])
         generated_images = self._generate_batch(batch_size)
         discriminator_X = np.concatenate((images, generated_images))
@@ -92,8 +91,7 @@ class BasicDCGAN(BaseModel):
 
         # next, train generator
         self.discriminator_model.trainable = False
-        self._compile()
-
+        self.model.compile(loss='binary_crossentropy', optimizer=self.FULL_OPTIMIZER, metrics=['accuracy'])
         full_X = np.random.uniform(-1, 1, (batch_size, self.NOISE_SIZE))
         full_Y = np.array([1]*batch_size)
         full_loss = self.model.train_on_batch(full_X, full_Y)
