@@ -5,10 +5,13 @@ from keras.layers.normalization import BatchNormalization
 from keras.layers.convolutional import UpSampling2D, Convolution2D, MaxPooling2D
 from keras.layers.core import Flatten
 from keras.optimizers import SGD
+from keras.backend import clear_session
 
 import numpy as np
+import os
 import logging
 import time
+import tempfile
 
 from app.models.base import BaseModel
 
@@ -16,9 +19,6 @@ class BasicDCGAN(BaseModel):
   EPOCHS = 1000
   NOISE_SIZE = 100
   MAX_BATCH_SIZE = 512
-  GENERATOR_OPTIMIZER = 'adam'
-  DISCRIMINATOR_OPTIMIZER = SGD(lr=0.0005, momentum=0.9, nesterov=True)
-  FULL_OPTIMIZER = SGD(lr=0.0005, momentum=0.9, nesterov=True)
 
   def _construct_model(self):
     self.generator_model = self._construct_generator()
@@ -60,9 +60,18 @@ class BasicDCGAN(BaseModel):
     return model
 
   def _compile(self):
-    self.generator_model.compile(loss='binary_crossentropy', optimizer=self.GENERATOR_OPTIMIZER, metrics=['accuracy'])
-    self.discriminator_model.compile(loss='binary_crossentropy', optimizer=self.DISCRIMINATOR_OPTIMIZER, metrics=['accuracy'])
-    self.model.compile(loss='binary_crossentropy', optimizer=self.FULL_OPTIMIZER, metrics=['accuracy'])
+    self.generator_model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+    self.discriminator_model.compile(loss='binary_crossentropy', optimizer=SGD(lr=0.0005, momentum=0.9, nesterov=True), metrics=['accuracy'])
+    self.model.compile(loss='binary_crossentropy', optimizer=SGD(lr=0.0005, momentum=0.9, nesterov=True), metrics=['accuracy'])
+
+  def _reset_memory(self):
+    logging.info("=== Resetting memory footprint")
+    t, name = tempfile.mkstemp()
+    os.close(t)
+    self.model.save(name)
+    clear_session()
+    self._construct_from_file(name)
+    os.unlink(name)
 
   def _generate_batch(self, num):
     noise = np.random.uniform(-1, 1, (num, self.NOISE_SIZE))
@@ -73,15 +82,20 @@ class BasicDCGAN(BaseModel):
 
   def train(self):
     model_name = "basic_dcgan-{}.h5".format(time.time())
+    i = 0
     for epoch in range(self.EPOCHS):
       logging.info("=== Epoch {}".format(epoch))
       for batch_base in range(0, len(self.image_loader), self.MAX_BATCH_SIZE):
+        if i % 32 == 0:
+          self._reset_memory()
+        i += 1
+
         batch_size = min(len(self.image_loader) - batch_base, self.MAX_BATCH_SIZE)
         logging.info("Training {} images".format(batch_size))
 
         # first, train discriminator
         self.discriminator_model.trainable = True
-        self.discriminator_model.compile(loss='binary_crossentropy', optimizer=self.DISCRIMINATOR_OPTIMIZER, metrics=['accuracy'])
+        self.discriminator_model.compile(loss='binary_crossentropy', optimizer=SGD(lr=0.0005, momentum=0.9, nesterov=True), metrics=['accuracy'])
         images = np.array([next(self.image_loader)/255.0 for _ in range(batch_size)])
         generated_images = self._generate_batch(batch_size)
         discriminator_X = np.concatenate((images, generated_images))
@@ -91,9 +105,10 @@ class BasicDCGAN(BaseModel):
 
         # next, train generator
         self.discriminator_model.trainable = False
-        self.model.compile(loss='binary_crossentropy', optimizer=self.FULL_OPTIMIZER, metrics=['accuracy'])
+        self.model.compile(loss='binary_crossentropy', optimizer=SGD(lr=0.0005, momentum=0.9, nesterov=True), metrics=['accuracy'])
         full_X = np.random.uniform(-1, 1, (batch_size, self.NOISE_SIZE))
         full_Y = np.array([1]*batch_size)
         full_loss = self.model.train_on_batch(full_X, full_Y)
         logging.info("Full loss: {}".format(full_loss))
+      logging.info("=== Writing model to disk")
       self.model.save(model_name)
