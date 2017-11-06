@@ -103,3 +103,4 @@ appConfig.xml
 *.ipynb
 
 ._*
+*.h5

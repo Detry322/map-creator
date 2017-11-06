@@ -19,7 +19,7 @@ def get_args():
   parser.add_argument('--train', help='Train tiles', action='store_true')
   parser.add_argument('--model_type', help='The model to train/generate with', type=str, default='BasicDCGAN')
   parser.add_argument('--model_file', help='The h5 model file', type=str)
-  parser.add_argument('--generate', help='Generating tiles')
+  parser.add_argument('--generate', help='Generating tiles', action='store_true')
   return parser.parse_args()
 
 def main(): 
@@ -36,7 +36,7 @@ def main():
     print "Training model..."
     train_model(args.model_type, args.zoom, model_file=args.model_file)
   if args.generate:
-    print "Generating tiles..."
+    print "Generating tiles until Control-C'd..."
     generate_tiles(args.model_type, args.model_file)
 
 if __name__ == '__main__':

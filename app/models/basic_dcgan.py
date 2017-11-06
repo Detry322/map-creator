@@ -1,4 +1,4 @@
-from keras.models import Sequential
+from keras.models import Sequential, load_model
 from keras.layers import Dense, Reshape, Flatten
 from keras.layers.advanced_activations import LeakyReLU
 from keras.layers.normalization import BatchNormalization
@@ -13,7 +13,7 @@ import time
 from app.models.base import BaseModel
 
 class BasicDCGAN(BaseModel):
-  EPOCHS = 100
+  EPOCHS = 1000
   NOISE_SIZE = 100
   MAX_BATCH_SIZE = 512
   GENERATOR_OPTIMIZER = 'adam'
@@ -24,6 +24,13 @@ class BasicDCGAN(BaseModel):
     self.generator_model = self._construct_generator()
     self.discriminator_model = self._construct_discriminator()
     self.model = self._construct_full(self.generator_model, self.discriminator_model)
+    self._compile()
+
+  def _construct_from_file(self, filename):
+    self.model = load_model(filename)
+    self.generator_model = self.model.layers[0]
+    self.discriminator_model = self.model.layers[1]
+    self._compile()
 
   def _construct_generator(self):
     model = Sequential()
@@ -33,7 +40,6 @@ class BasicDCGAN(BaseModel):
     model.add(Convolution2D(64, 5, 5, border_mode='same', activation='relu'))
     model.add(UpSampling2D(size=(2, 2)))
     model.add(Convolution2D(3, 5, 5, border_mode='same', activation='sigmoid'))
-    model.compile(loss='binary_crossentropy', optimizer=self.GENERATOR_OPTIMIZER, metrics=['accuracy'])
     return model
 
   def _construct_discriminator(self):
@@ -45,24 +51,28 @@ class BasicDCGAN(BaseModel):
     model.add(Flatten())
     model.add(Dense(128))
     model.add(Dense(1, activation='sigmoid'))
-    model.compile(loss='binary_crossentropy', optimizer=self.DISCRIMINATOR_OPTIMIZER, metrics=['accuracy'])
     return model
 
   def _construct_full(self, generator, discriminator):
     model = Sequential()
     model.add(generator)
     model.add(discriminator)
-    model.compile(loss='binary_crossentropy', optimizer=self.FULL_OPTIMIZER, metrics=['accuracy'])
     return model
+
+  def _compile(self):
+    self.generator_model.compile(loss='binary_crossentropy', optimizer=self.GENERATOR_OPTIMIZER, metrics=['accuracy'])
+    self.discriminator_model.compile(loss='binary_crossentropy', optimizer=self.DISCRIMINATOR_OPTIMIZER, metrics=['accuracy'])
+    self.model.compile(loss='binary_crossentropy', optimizer=self.FULL_OPTIMIZER, metrics=['accuracy'])
 
   def _generate_batch(self, num):
     noise = np.random.uniform(-1, 1, (num, self.NOISE_SIZE))
     return self.generator_model.predict(noise)
 
   def generate_image(self):
-    return self._generate_batch(1)[0]*255.0
+    return (self._generate_batch(1)[0]*256.0).astype('uint8')
 
   def train(self):
+    model_name = "basic_dcgan-{}.h5".format(time.time())
     for epoch in range(self.EPOCHS):
       logging.info("=== Epoch {}".format(epoch))
       for batch_base in range(0, len(self.image_loader), self.MAX_BATCH_SIZE):
@@ -71,6 +81,8 @@ class BasicDCGAN(BaseModel):
 
         # first, train discriminator
         self.discriminator_model.trainable = True
+        self._compile()
+
         images = np.array([next(self.image_loader)/255.0 for _ in range(batch_size)])
         generated_images = self._generate_batch(batch_size)
         discriminator_X = np.concatenate((images, generated_images))
@@ -80,8 +92,10 @@ class BasicDCGAN(BaseModel):
 
         # next, train generator
         self.discriminator_model.trainable = False
+        self._compile()
+
         full_X = np.random.uniform(-1, 1, (batch_size, self.NOISE_SIZE))
         full_Y = np.array([1]*batch_size)
         full_loss = self.model.train_on_batch(full_X, full_Y)
         logging.info("Full loss: {}".format(full_loss))
-      self.model.save("basic_dcgan-{}.h5".format(time.time()))
+      self.model.save(model_name)

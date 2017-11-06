@@ -9,7 +9,7 @@ class BaseModel(object):
     else:
       self._construct_model()
 
-  def _construct_from_file(self, image_size, filename):
+  def _construct_from_file(self, filename):
     raise NotImplementedError("This was never overridden.")
 
   def _construct_model(self, image_size):
