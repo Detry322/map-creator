@@ -15,7 +15,7 @@ from app.models.base import BaseModel
 class BasicDCGAN(BaseModel):
   EPOCHS = 1000
   NOISE_SIZE = 100
-  MAX_BATCH_SIZE = 512
+  MAX_BATCH_SIZE = 256
   GENERATOR_OPTIMIZER = 'adam'
   DISCRIMINATOR_OPTIMIZER = SGD(lr=0.0005, momentum=0.9, nesterov=True)
   FULL_OPTIMIZER = SGD(lr=0.0005, momentum=0.9, nesterov=True)
