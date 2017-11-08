@@ -1,7 +1,7 @@
 from keras.models import Sequential, load_model
 from keras.layers import Dense, Reshape, Flatten, Conv2D, Conv2DTranspose, BatchNormalization, Activation
 from keras.layers.advanced_activations import LeakyReLU
-from keras.optimizers import Adam
+from keras.optimizers import Adam, SGD
 from keras.backend import clear_session
 
 import numpy as np
@@ -15,7 +15,7 @@ from app.models.base import BaseModel
 class BetterDCGAN(BaseModel):
   EPOCHS = 1000
   NOISE_SIZE = 100
-  MAX_BATCH_SIZE = 128
+  MAX_BATCH_SIZE = 256
 
   def _construct_model(self):
     self.generator_model = self._construct_generator()
@@ -31,38 +31,37 @@ class BetterDCGAN(BaseModel):
 
   def _construct_generator(self):
     model = Sequential()
-    model.add(Dense(input_dim=self.NOISE_SIZE, units=(4*4*1024)))
+    model.add(Dense(input_dim=self.NOISE_SIZE, units=(4*4*1024), kernel_initializer='random_normal'))
     model.add(Reshape((4, 4, 1024)))
     model.add(BatchNormalization())
     model.add(Activation(activation='relu'))
-    model.add(Conv2DTranspose(512, 5, strides=2, padding='same'))
+    model.add(Conv2DTranspose(512, 5, strides=2, padding='same', kernel_initializer='random_normal'))
     model.add(BatchNormalization())
     model.add(Activation(activation='relu'))
-    model.add(Conv2DTranspose(256, 5, strides=2, padding='same'))
+    model.add(Conv2DTranspose(256, 5, strides=2, padding='same', kernel_initializer='random_normal'))
     model.add(BatchNormalization())
     model.add(Activation(activation='relu'))
-    model.add(Conv2DTranspose(128, 5, strides=2, padding='same'))
+    model.add(Conv2DTranspose(128, 5, strides=2, padding='same', kernel_initializer='random_normal'))
     model.add(BatchNormalization())
     model.add(Activation(activation='relu'))
-    model.add(Conv2DTranspose(3, 5, strides=2, padding='same', activation='sigmoid'))
+    model.add(Conv2DTranspose(3, 5, strides=2, padding='same', kernel_initializer='random_normal', activation='sigmoid'))
     return model
 
   def _construct_discriminator(self):
     model = Sequential()
-    model.add(Conv2D(128, 5, strides=2, padding='same', input_shape=self.image_size))
+    model.add(Conv2D(64, 5, strides=2, padding='same', kernel_initializer='random_normal', input_shape=self.image_size))
+    model.add(LeakyReLU(0.2))
+    model.add(Conv2D(128, 5, strides=2, padding='same', kernel_initializer='random_normal'))
     model.add(BatchNormalization())
     model.add(LeakyReLU(0.2))
-    model.add(Conv2D(256, 5, strides=2, padding='same'))
+    model.add(Conv2D(256, 5, strides=2, padding='same', kernel_initializer='random_normal'))
     model.add(BatchNormalization())
     model.add(LeakyReLU(0.2))
-    model.add(Conv2D(512, 5, strides=2, padding='same'))
+    model.add(Conv2D(512, 5, strides=2, padding='same', kernel_initializer='random_normal'))
     model.add(BatchNormalization())
     model.add(LeakyReLU(0.2))
-    model.add(Conv2D(1024, 5, strides=2, padding='same'))
-    model.add(BatchNormalization())
-    model.add(LeakyReLU(0.2))
-    model.add(Reshape((4*4*1024,)))
-    model.add(Dense(1, activation='sigmoid'))
+    model.add(Reshape((4*4*512,)))
+    model.add(Dense(1, kernel_initializer='random_normal', activation='sigmoid'))
     return model
 
   def _construct_full(self, generator, discriminator):
@@ -72,9 +71,9 @@ class BetterDCGAN(BaseModel):
     return model
 
   def _compile(self):
-    self.generator_model.compile(loss='binary_crossentropy', optimizer=Adam(lr=0.0005, beta_1=0.5), metrics=['accuracy'])
-    self.discriminator_model.compile(loss='binary_crossentropy', optimizer='sgd', metrics=['accuracy'])
-    self.model.compile(loss='binary_crossentropy', optimizer='sgd', metrics=['accuracy'])
+    self.generator_model.compile(loss='binary_crossentropy', optimizer=Adam(lr=0.002, beta_1=0.5), metrics=['accuracy'])
+    self.discriminator_model.compile(loss='binary_crossentropy', optimizer=Adam(lr=0.002, beta_1=0.5), metrics=['accuracy'])
+    self.model.compile(loss='binary_crossentropy', optimizer=Adam(lr=0.002, beta_1=0.5), metrics=['accuracy'])
 
   def _reset_memory(self):
     logging.info("=== Resetting memory footprint")
@@ -107,7 +106,7 @@ class BetterDCGAN(BaseModel):
 
         # first, train discriminator
         self.discriminator_model.trainable = True
-        self.discriminator_model.compile(loss='binary_crossentropy', optimizer='sgd', metrics=['accuracy'])
+        self.discriminator_model.compile(loss='binary_crossentropy', optimizer=Adam(lr=0.002, beta_1=0.5), metrics=['accuracy'])
         images = np.array([next(self.image_loader)/255.0 for _ in range(batch_size)])
         generated_images = self._generate_batch(batch_size)
         discriminator_X = np.concatenate((images, generated_images))
@@ -117,7 +116,7 @@ class BetterDCGAN(BaseModel):
 
         # next, train generator
         self.discriminator_model.trainable = False
-        self.model.compile(loss='binary_crossentropy', optimizer='sgd', metrics=['accuracy'])
+        self.model.compile(loss='binary_crossentropy', optimizer=Adam(lr=0.002, beta_1=0.5), metrics=['accuracy'])
         full_X = np.random.uniform(-1, 1, (batch_size, self.NOISE_SIZE))
         full_Y = np.array([1]*batch_size)
         full_loss = self.model.train_on_batch(full_X, full_Y)
