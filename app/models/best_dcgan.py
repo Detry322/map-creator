@@ -9,8 +9,11 @@ import os
 import logging
 import time
 import tempfile
+from scipy import misc
 
 from app.models.base import BaseModel
+from app.utils import mkdir_p
+from app import GENERATED_TILES_FOLDER
 
 class BestDCGAN(BaseModel):
   EPOCHS = 1000
@@ -69,8 +72,8 @@ class BestDCGAN(BaseModel):
     return model
 
   def _compile(self):
-    self.trainable_discriminator.compile(loss='binary_crossentropy', optimizer=Adam(lr=0.002, beta_1=0.5), metrics=['accuracy'])
-    self.model.compile(loss='binary_crossentropy', optimizer=Adam(lr=0.002, beta_1=0.5), metrics=['accuracy'])
+    self.trainable_discriminator.compile(loss='binary_crossentropy', optimizer=Adam(lr=0.00001, beta_1=0.5), metrics=['accuracy'])
+    self.model.compile(loss='binary_crossentropy', optimizer=Adam(lr=0.0001, beta_1=0.5), metrics=['accuracy'])
 
   def _copy_weights(self):
     self.untrainable_discriminator.set_weights(self.trainable_discriminator.get_weights())
@@ -88,13 +91,24 @@ class BestDCGAN(BaseModel):
     return np.array([(next(self.image_loader)/127.5) - 1 for _ in range(size)])
 
   def train(self):
+    i = 0
     model_name = "best_dcgan-{}.h5".format(time.time())
+    folder = os.path.join(GENERATED_TILES_FOLDER, model_name)
+    mkdir_p(folder)
+
     for epoch in range(self.EPOCHS):
       logging.info("=== Epoch {}".format(epoch))
       for batch_base in range(0, len(self.image_loader), self.MAX_BATCH_SIZE):
+        i += 1
 
         batch_size = min(len(self.image_loader) - batch_base, self.MAX_BATCH_SIZE)
         logging.info("Training {} images".format(batch_size))
+
+        generated_images_batch_size = batch_size
+        generated_images_X = self._generate_batch(generated_images_batch_size)
+        generated_images_Y = np.array([0.0]*generated_images_batch_size)
+        gen_loss = self.trainable_discriminator.train_on_batch(generated_images_X, generated_images_Y)
+        logging.info("Discriminator gen. loss: {}".format(gen_loss))
 
         # first, train discriminator
         real_images_batch_size = batch_size
@@ -102,12 +116,6 @@ class BestDCGAN(BaseModel):
         real_images_Y = np.array([1.0]*real_images_batch_size)
         real_loss = self.trainable_discriminator.train_on_batch(real_images_X, real_images_Y)
         logging.info("Discriminator real loss: {}".format(real_loss))
-
-        generated_images_batch_size = batch_size
-        generated_images_X = self._generate_batch(generated_images_batch_size)
-        generated_images_Y = np.array([0.0]*generated_images_batch_size)
-        gen_loss = self.trainable_discriminator.train_on_batch(generated_images_X, generated_images_Y)
-        logging.info("Discriminator gen. loss: {}".format(gen_loss))
 
         logging.info("Copying weights...")
         self._copy_weights()
@@ -117,5 +125,10 @@ class BestDCGAN(BaseModel):
         generator_Y = np.array([1.0]*generator_batch_size)
         generator_loss = self.model.train_on_batch(generator_X, generator_Y)
         logging.info("Generator loss: {}".format(generator_loss))
+
+        logging.info("Generating image...")
+        filename = os.path.join(folder, '{}.png'.format(i))
+        misc.imsave(filename, self.generate_image())
+
       logging.info("=== Writing model to disk")
       self.model.save(model_name)
