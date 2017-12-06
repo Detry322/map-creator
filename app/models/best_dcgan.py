@@ -18,7 +18,7 @@ from app import GENERATED_TILES_FOLDER
 class BestDCGAN(BaseModel):
   EPOCHS = 1000
   NOISE_SIZE = 100
-  MAX_BATCH_SIZE = 256
+  MAX_BATCH_SIZE = 128
 
   def _construct_model(self):
     self.trainable_discriminator = self._construct_discriminator()
@@ -31,16 +31,12 @@ class BestDCGAN(BaseModel):
     model = Sequential()
     model.add(Dense(input_dim=self.NOISE_SIZE, units=(4*4*1024)))
     model.add(Reshape((4, 4, 1024)))
-    model.add(BatchNormalization())
     model.add(LeakyReLU(0.2))
     model.add(Conv2DTranspose(512, 5, strides=2, padding='same'))
-    model.add(BatchNormalization())
     model.add(LeakyReLU(0.2))
     model.add(Conv2DTranspose(256, 5, strides=2, padding='same'))
-    model.add(BatchNormalization())
     model.add(LeakyReLU(0.2))
     model.add(Conv2DTranspose(128, 5, strides=2, padding='same'))
-    model.add(BatchNormalization())
     model.add(LeakyReLU(0.2))
     model.add(Conv2DTranspose(3, 5, strides=2, padding='same', activation='tanh'))
     return model
@@ -72,8 +68,8 @@ class BestDCGAN(BaseModel):
     return model
 
   def _compile(self):
-    self.trainable_discriminator.compile(loss='binary_crossentropy', optimizer=Adam(lr=0.00001, beta_1=0.5), metrics=['accuracy'])
-    self.model.compile(loss='binary_crossentropy', optimizer=Adam(lr=0.0001, beta_1=0.5), metrics=['accuracy'])
+    self.trainable_discriminator.compile(loss='binary_crossentropy', optimizer=Adam(lr=0.0005, beta_1=0.5), metrics=['accuracy'])
+    self.model.compile(loss='binary_crossentropy', optimizer=Adam(lr=0.0005, beta_1=0.5), metrics=['accuracy'])
 
   def _copy_weights(self):
     self.untrainable_discriminator.set_weights(self.trainable_discriminator.get_weights())
@@ -110,7 +106,6 @@ class BestDCGAN(BaseModel):
         gen_loss = self.trainable_discriminator.train_on_batch(generated_images_X, generated_images_Y)
         logging.info("Discriminator gen. loss: {}".format(gen_loss))
 
-        # first, train discriminator
         real_images_batch_size = batch_size
         real_images_X = self._load_batch(real_images_batch_size)
         real_images_Y = np.array([1.0]*real_images_batch_size)
@@ -120,15 +115,20 @@ class BestDCGAN(BaseModel):
         logging.info("Copying weights...")
         self._copy_weights()
 
-        generator_batch_size = batch_size
-        generator_X = self._generate_noise(generator_batch_size)
-        generator_Y = np.array([1.0]*generator_batch_size)
-        generator_loss = self.model.train_on_batch(generator_X, generator_Y)
-        logging.info("Generator loss: {}".format(generator_loss))
+        generator_loss = float('inf')
+        while generator_loss > (15.0 if i == 1 else 6.0):
+          generator_batch_size = batch_size
+          generator_X = self._generate_noise(generator_batch_size)
+          generator_Y = np.array([1.0]*generator_batch_size)
+          g_loss = self.model.train_on_batch(generator_X, generator_Y)
+          generator_loss = g_loss[0]
+          logging.info("Generator loss: {}".format(g_loss))
 
         logging.info("Generating image...")
-        filename = os.path.join(folder, '{}.png'.format(i))
-        misc.imsave(filename, self.generate_image())
+        filename = os.path.join(folder, '{:06d}.png'.format(i))
+        image = self.generate_image()
+        misc.imsave(filename, image)
+        misc.imsave(os.path.join(folder, '00000__current.png'), image)
 
       logging.info("=== Writing model to disk")
       self.model.save(model_name)
