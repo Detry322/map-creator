@@ -10,7 +10,7 @@ def greyscale(img, *args):
 
 def resize(img, *args):
   p = float(args[0]) if len(args) > 0 else .5
-  return misc.imresize(img, p)
+  return misc.imresize(img, p, interp='lanczos')
 
 all_functions = {
   'greyscale': greyscale,
@@ -43,10 +43,13 @@ def write_processed_image(processed_image, input_filename):
     misc.imsave(f, processed_image)
 
 def preprocess_tile(functions, input_filename):
-  img = misc.imread(input_filename)
-  for func in functions:
-    img = func(img)
-  write_processed_image(img, input_filename)
+  try:
+    img = misc.imread(input_filename, mode='RGB')
+    for func in functions:
+      img = func(img)
+    write_processed_image(img, input_filename)
+  except:
+    pass
 
 def preprocess_tiles(zoom, *args):
   functions = parse_args(args)

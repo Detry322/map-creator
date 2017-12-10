@@ -3,6 +3,8 @@ import os
 BASE_FOLDER = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 INPUT_TILES_FOLDER = os.path.join(BASE_FOLDER, 'input_tiles')
 OUTPUT_TILES_FOLDER = os.path.join(BASE_FOLDER, 'output_tiles')
+BACKPROPS_FOLDER = os.path.join(BASE_FOLDER, 'backprops')
+FORWARDPROPS_FOLDER = os.path.join(BASE_FOLDER, 'forwardprops')
 GENERATED_TILES_FOLDER = os.path.join(BASE_FOLDER, 'generated_tiles')
 DEPENDENCY_FOLDER = os.path.join(BASE_FOLDER, 'deps')
 

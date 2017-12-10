@@ -15,6 +15,11 @@ from app.models.base import BaseModel
 from app.utils import mkdir_p
 from app import GENERATED_TILES_FOLDER
 
+def make_untrainable(model):
+  model.trainable = False
+  for layer in model.layers:
+    layer.trainable = False
+
 class BestDCGAN(BaseModel):
   EPOCHS = 1000
   NOISE_SIZE = 100
@@ -25,6 +30,17 @@ class BestDCGAN(BaseModel):
     self.untrainable_discriminator = self._construct_discriminator()
     self.generator = self._construct_generator()
     self.model = self._construct_full(self.generator, self.untrainable_discriminator)
+    self._compile()
+
+  def _construct_from_file(self, filename):
+    model = load_model(filename)
+    self.generator = model.layers[0]
+    self.untrainable_discriminator = model.layers[1]
+    make_untrainable(self.untrainable_discriminator)
+    self.model = model
+
+    model_copy = load_model(filename)
+    self.trainable_discriminator = model_copy.layers[1]
     self._compile()
 
   def _construct_generator(self):
@@ -59,17 +75,15 @@ class BestDCGAN(BaseModel):
     return model
 
   def _construct_full(self, generator, discriminator):
-    discriminator.trainable = False
-    for layer in discriminator.layers:
-        layer.trainable = False
+    make_untrainable(discriminator)
     model = Sequential()
     model.add(generator)
     model.add(discriminator)
     return model
 
   def _compile(self):
-    self.trainable_discriminator.compile(loss='binary_crossentropy', optimizer=Adam(lr=0.0005, beta_1=0.5), metrics=['accuracy'])
-    self.model.compile(loss='binary_crossentropy', optimizer=Adam(lr=0.0005, beta_1=0.5), metrics=['accuracy'])
+    self.trainable_discriminator.compile(loss='binary_crossentropy', optimizer=Adam(lr=0.00001), metrics=['accuracy'])
+    self.model.compile(loss='binary_crossentropy', optimizer=Adam(lr=0.0001), metrics=['accuracy'])
 
   def _copy_weights(self):
     self.untrainable_discriminator.set_weights(self.trainable_discriminator.get_weights())
@@ -81,14 +95,14 @@ class BestDCGAN(BaseModel):
     return self.generator.predict(self._generate_noise(num))
 
   def generate_image(self):
-    return ((self._generate_batch(1)[0] + 1)*128.0).astype('uint8')
+    return np.clip(((self._generate_batch(1)[0] + 1)*128.0), 0, 255).astype('uint8')
 
   def _load_batch(self, size):
     return np.array([(next(self.image_loader)/127.5) - 1 for _ in range(size)])
 
   def train(self):
     i = 0
-    model_name = "best_dcgan-{}.h5".format(time.time())
+    model_name = "best_dcgan-{}".format(time.time())
     folder = os.path.join(GENERATED_TILES_FOLDER, model_name)
     mkdir_p(folder)
 
@@ -100,23 +114,29 @@ class BestDCGAN(BaseModel):
         batch_size = min(len(self.image_loader) - batch_base, self.MAX_BATCH_SIZE)
         logging.info("Training {} images".format(batch_size))
 
-        generated_images_batch_size = batch_size
-        generated_images_X = self._generate_batch(generated_images_batch_size)
-        generated_images_Y = np.array([0.0]*generated_images_batch_size)
-        gen_loss = self.trainable_discriminator.train_on_batch(generated_images_X, generated_images_Y)
-        logging.info("Discriminator gen. loss: {}".format(gen_loss))
-
-        real_images_batch_size = batch_size
-        real_images_X = self._load_batch(real_images_batch_size)
-        real_images_Y = np.array([1.0]*real_images_batch_size)
-        real_loss = self.trainable_discriminator.train_on_batch(real_images_X, real_images_Y)
-        logging.info("Discriminator real loss: {}".format(real_loss))
+        g_loss = float('inf')
+        r_loss = float('inf')
+        while g_loss + r_loss > 0.8:
+          if g_loss >= r_loss:
+            generated_images_batch_size = batch_size
+            generated_images_X = self._generate_batch(generated_images_batch_size)
+            generated_images_Y = np.array([0.0]*generated_images_batch_size)
+            gen_loss = self.trainable_discriminator.train_on_batch(generated_images_X, generated_images_Y)
+            logging.info("Discriminator gen. loss: {}".format(gen_loss))
+            g_loss = gen_loss[0]
+          else:
+            real_images_batch_size = batch_size
+            real_images_X = self._load_batch(real_images_batch_size)
+            real_images_Y = np.array([1.0]*real_images_batch_size)
+            real_loss = self.trainable_discriminator.train_on_batch(real_images_X, real_images_Y)
+            logging.info("Discriminator real loss: {}".format(real_loss))
+            r_loss = real_loss[0]
 
         logging.info("Copying weights...")
         self._copy_weights()
 
         generator_loss = float('inf')
-        while generator_loss > (15.0 if i == 1 else 6.0):
+        while generator_loss > (15.0 if i == 1 else 4.0):
           generator_batch_size = batch_size
           generator_X = self._generate_noise(generator_batch_size)
           generator_Y = np.array([1.0]*generator_batch_size)
@@ -128,7 +148,11 @@ class BestDCGAN(BaseModel):
         filename = os.path.join(folder, '{:06d}.png'.format(i))
         image = self.generate_image()
         misc.imsave(filename, image)
-        misc.imsave(os.path.join(folder, '00000__current.png'), image)
+        misc.imsave(os.path.join(folder, '000000__current.png'), image)
+
+        if i % 1000 == 0:
+          logging.info("=== Writing model to disk")
+          self.model.save("models/" + model_name + "-{}.h5".format(i))
 
       logging.info("=== Writing model to disk")
       self.model.save(model_name)

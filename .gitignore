@@ -104,3 +104,5 @@ appConfig.xml
 
 ._*
 *.h5
+backprops
+forwardprops
