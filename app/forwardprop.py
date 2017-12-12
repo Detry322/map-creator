@@ -25,7 +25,7 @@ def forwardprop(model_file, zoom):
 
   model = load_model(model_file)
   generator = model.layers[0]
-  generator.compile(loss='mean_squared_error', optimizer=SGD(lr=75))
+  generator.compile(loss='mean_squared_error', optimizer=Adagrad(lr=1))
 
   for filname in input_files:
     print "Generating..."

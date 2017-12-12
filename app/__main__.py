@@ -12,13 +12,15 @@ from app.train import train_model
 from app.generate import generate_tiles
 from app.backprop import backprop
 from app.forwardprop import forwardprop
+from app.random import random
 
 def get_args():
   parser = argparse.ArgumentParser(description='map-creator uses DCGANs to generate pictures of map tiles')
-  parser.add_argument('--zoom', help='Zoom size', type=int, default=13)
+  parser.add_argument('--zoom', help='Zoom size', type=str, default='13')
   parser.add_argument('--download', help='Download tiles', action='store_true')
   parser.add_argument('--preprocess', help='Preprocessing args', nargs='+')
   parser.add_argument('--backprop', help='backprop', action='store_true')
+  parser.add_argument('--random', help='random', action='store_true')
   parser.add_argument('--forwardprop', help='forwardprop', action='store_true')
   parser.add_argument('--train', help='Train tiles', action='store_true')
   parser.add_argument('--model_type', help='The model to train/generate with', type=str, default='BestDCGAN')
@@ -48,6 +50,9 @@ def main():
   if args.forwardprop:
     print "Forwardproping until Control-C'd..."
     forwardprop(args.model_file, args.zoom)
+  if args.random:
+    print "Doing random stuff"
+    random(args.model_file)
 
 if __name__ == '__main__':
   main()

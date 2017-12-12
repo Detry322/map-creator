@@ -7,6 +7,7 @@ BACKPROPS_FOLDER = os.path.join(BASE_FOLDER, 'backprops')
 FORWARDPROPS_FOLDER = os.path.join(BASE_FOLDER, 'forwardprops')
 GENERATED_TILES_FOLDER = os.path.join(BASE_FOLDER, 'generated_tiles')
 DEPENDENCY_FOLDER = os.path.join(BASE_FOLDER, 'deps')
+RANDOM_FOLDER = os.path.join(BASE_FOLDER, 'random')
 
 TILE_DOWNLOADER = os.path.join(DEPENDENCY_FOLDER, 'jTileDownloader-0-6-1.jar')
 
